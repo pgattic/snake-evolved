@@ -1,5 +1,7 @@
 const
-	mapSize = 650,
+	hypotenuse = (x, y) => {return (Math.sqrt(x**2+y**2))}
+	spectateMode = false,
+	mapSize = 600,
 	turnSensitivity = 0.1,
 	startLength = 20,
 	playerSpeed = 2,
@@ -20,18 +22,19 @@ const
 	foodColor = "#080",
 	pauseKey = "Escape",
 	spectatorRotationVelocity = 0.005,
-	version = "pgattic v1.9.6";
+	version = "pgattic v1.10.0";
 
 var
 	indexOfSpectate = 1,
 	spectatorRotate = 0,
 	playerResolution = 1,
 	playersInGame = [],
-	playerDrawRate = 2, // how many segments of the player are skipped, plus one. higher number = less resolution on their curvature. 
+	playerDrawRate = 3, // how many segments of the player are skipped, plus one. higher number = less resolution on their curvature. 
 	paused = false,
 	food = [],
 	seconds = 0,
 	frames = 0,
+	frameRate = 60,
 	spectateCounter = 0,
 	relativeGameSpeed = 1,
 	
@@ -52,9 +55,7 @@ switch (numOfPlayers) {
 		scoreMeters = [document.getElementById("a")];
 		players = [
 			{
-				location: [
-					startLocation[0]
-				],
+				location: [ startLocation[0] ],
 				direction: startDirection[0],
 				size: startLength,
 				boosting:false,
@@ -69,12 +70,10 @@ switch (numOfPlayers) {
 				rightKey: "ARROWRIGHT",
 				spawnKey: "1",
 				inGame: true,
-				cpu: false,
+				cpu: spectateMode,
 			},
 			{
-				location: [
-					startLocation[1]
-				],
+				location: [ startLocation[1] ],
 				direction: startDirection[1],
 				size: generateAILength(),
 				boosting:false,
@@ -87,9 +86,7 @@ switch (numOfPlayers) {
 				cpu: true,
 			},
 			{
-				location: [
-					startLocation[2]
-				],
+				location: [ startLocation[2] ],
 				direction: startDirection[2],
 				size: generateAILength(),
 				boosting:false,
@@ -102,9 +99,7 @@ switch (numOfPlayers) {
 				cpu: true,
 			},
 			{
-				location: [
-					startLocation[3]
-				],
+				location: [ startLocation[3] ],
 				direction: startDirection[3],
 				size: generateAILength(),
 				boosting:false,
@@ -126,9 +121,7 @@ switch (numOfPlayers) {
 		scoreMeters = [document.getElementById("a"), document.getElementById("b"), document.getElementById("c"), document.getElementById("d")];
 		players = [
 			{
-				location: [
-					startLocation[0]
-				],
+				location: [ startLocation[0] ],
 				direction: startDirection[0],
 				size: startLength,
 				boosting:false,
@@ -143,12 +136,10 @@ switch (numOfPlayers) {
 				rightKey: "D",
 				spawnKey: "1",
 				inGame: false,
-				cpu: false,
+				cpu: spectateMode,
 			},
 			{
-				location: [
-					startLocation[1]
-				],
+				location: [ startLocation[1] ],
 				direction: startDirection[1],
 				size: startLength,
 				boosting:false,
@@ -163,7 +154,7 @@ switch (numOfPlayers) {
 				rightKey: "ARROWRIGHT",
 				spawnKey: "2",
 				inGame: false,
-				cpu: false,
+				cpu: spectateMode,
 			},
 		];
 		break;
@@ -175,9 +166,7 @@ switch (numOfPlayers) {
 		scoreMeters = [document.getElementById("a"), document.getElementById("b"), document.getElementById("c"), document.getElementById("d")];
 		players = [
 			{
-				location: [
-					startLocation[0]
-				],
+				location: [ startLocation[0] ],
 				direction: startDirection[0],
 				size: startLength,
 				boosting:false,
@@ -192,12 +181,10 @@ switch (numOfPlayers) {
 				rightKey: "D",
 				spawnKey: "1",
 				inGame: false,
-				cpu: false,
+				cpu: spectateMode,
 			},
 			{
-				location: [
-					startLocation[1]
-				],
+				location: [ startLocation[1] ],
 				direction: startDirection[1],
 				size: startLength,
 				boosting:false,
@@ -212,12 +199,10 @@ switch (numOfPlayers) {
 				rightKey: "H",
 				spawnKey: "2",
 				inGame: false,
-				cpu: false,
+				cpu: spectateMode,
 			},
 			{
-				location: [
-					startLocation[2]
-				],
+				location: [ startLocation[2] ],
 				direction: startDirection[2],
 				size: startLength,
 				boosting:false,
@@ -232,12 +217,10 @@ switch (numOfPlayers) {
 				rightKey: "L",
 				spawnKey: "3",
 				inGame: false,
-				cpu: false,
+				cpu: spectateMode,
 			},
 			{
-				location: [
-					startLocation[3]
-				],
+				location: [ startLocation[3] ],
 				direction: startDirection[3],
 				size: startLength,
 				boosting:false,
@@ -252,7 +235,7 @@ switch (numOfPlayers) {
 				rightKey: "ARROWRIGHT",
 				spawnKey: "4",
 				inGame: false,
-				cpu: false,
+				cpu: spectateMode,
 			},
 		];
 		break;
@@ -347,92 +330,92 @@ function doSpectateCounter () {
 	indexOfSpectate = playersInGame[parseInt(spectateCounter / spectateDuration) % playersInGame.length];
 }
 
-function calcAI(e) {
-	if (players[e].cpu && food.length > 0) {
+function AISelectFood(e, closeDistance) {
+	var selectedFood;
+	for (var i = 0; i < food.length; i++) {
+		var x = food[i][0] - players[e].location[0][0];
+		var y = food[i][1] - players[e].location[0][1];
+		var d = hypotenuse(x, y);
+		if (d < closeDistance) {
+			closeDistance = d;
+			selectedFood = i;
+		}
+	}
+	return [selectedFood, closeDistance];
+}
+
+function turnTowards(e, t) {
+	var x = t[0] - players[e].location[0][0];
+	var y = t[1] - players[e].location[0][1];
+	var xn = x * Math.cos(players[e].direction) - y * Math.sin(players[e].direction);
+	var yn = x * Math.sin(players[e].direction) + y * Math.cos(players[e].direction);
+	if (yn > 0) { players[e].right = true; players[e].left = false; }
+	if (yn < 0) { players[e].left = true; players[e].right = false; }
+	return [xn, yn];
+}
+
+function AITurn(e, selectedFood) {
+	var [xn, yn] = turnTowards(e, food[selectedFood]);
+
+	if (Math.abs(yn) < calcSnakeWidth(e) / 2 + foodRadius && xn > 0) {
+		players[e].left = players[e].right = false;
+	}
+	if (xn < 0 && xn > - 40 && Math.abs(yn) < 30) {
 		players[e].left = false;
 		players[e].right = false;
+	}
+}
+
+function calcAI(e) {
+	players[e].left = false;
+	players[e].right = false;
+	players[e].up = false;
+	var closeDistance = mapSize * 2;
+	var selectedFood;
+	[selectedFood, closeDistance] = AISelectFood(e, closeDistance);
+
+	AITurn(e, selectedFood);
+
+	var selectedBody;
+	var closeBodyDist = 300;
+	var selectedPlayer;
+	for (var i = 0; i < players.length; i++) {
+		if (e != i) {
+			var x = players[i].location[0][0] - food[selectedFood][0];
+			var y = players[i].location[0][1] - food[selectedFood][1];
+			var g = hypotenuse(x, y);
+			if (g - 10 < closeDistance) {
+				players[e].up = true;
+			}
+			for (var q = 0; q < players[i].location.length; q++) {
+				var x = players[i].location[q][0] - players[e].location[0][0];
+				var y = players[i].location[q][1] - players[e].location[0][1];
+				var d = hypotenuse(x, y);
+				if (d < closeBodyDist) {
+					closeBodyDist = d;
+					selectedBody = q;
+					selectedPlayer = i;
+				}		
+			}
+		}
+	}
+	if (closeBodyDist < 40) {
+		var x = players[selectedPlayer].location[selectedBody][0] - players[e].location[0][0];
+		var y = players[selectedPlayer].location[selectedBody][1] - players[e].location[0][1];
+		var xn = x * Math.cos(players[e].direction) - y * Math.sin(players[e].direction);
+		var yn = x * Math.sin(players[e].direction) + y * Math.cos(players[e].direction);
 		players[e].up = false;
-		var closeDistance = mapSize * 2;
-		var selectedFood;
-		for (var i = 0; i < food.length; i++) {
-			var x = food[i][0] - players[e].location[0][0];
-			var y = food[i][1] - players[e].location[0][1];
-			var d = Math.sqrt(x ** 2 + y ** 2);
-			if (d < closeDistance) {
-				closeDistance = d;
-				selectedFood = i;
-			}
-		}
-		var a = food[selectedFood][0] - players[e].location[0][0];
-		var b = food[selectedFood][1] - players[e].location[0][1];
-		var an = a * Math.cos(players[e].direction) - b * Math.sin(players[e].direction);
-		var bn = a * Math.sin(players[e].direction) + b * Math.cos(players[e].direction);
-		if (bn > 0) {
+		if (yn < 0) {
 			players[e].right = true;
+			players[e].left = false;
 		}
-		else if (bn < 0) {
+		else if (yn > 0) {
 			players[e].left = true;
-		}
-		if (Math.abs(bn) < calcSnakeWidth(e) / 2 + foodRadius && an > 0) {
-			players[e].left = false;
 			players[e].right = false;
 		}
-		if (an < 0 && an > - 40 && Math.abs(bn) < 30) {
-			players[e].left = false;
-			players[e].right = false;
-		}
-		var selectedBody;
-		var closeBodyDist = 300;
-		var selectedPlayer;
-		for (var i = 0; i < players.length; i++) {
-			if (e != i) {
-				var c = players[i].location[0][0] - food[selectedFood][0];
-				var f = players[i].location[0][1] - food[selectedFood][1];
-				var g = Math.sqrt(c **2 + f ** 2);
-				if (g - 10 < closeDistance) {
-					players[e].up = true;
-				}
-				for (var q = 0; q < players[i].location.length; q++) {
-					var x = players[i].location[q][0] - players[e].location[0][0];
-					var y = players[i].location[q][1] - players[e].location[0][1];
-					var d = Math.sqrt(x ** 2 + y ** 2);
-					if (d < closeBodyDist) {
-						closeBodyDist = d;
-						selectedBody = q;
-						selectedPlayer = i;
-					}		
-				}
-			}
-		}
-		if (closeBodyDist < 40) {
-			var x = players[selectedPlayer].location[selectedBody][0] - players[e].location[0][0];
-			var y = players[selectedPlayer].location[selectedBody][1] - players[e].location[0][1];
-			var xn = x * Math.cos(players[e].direction) - y * Math.sin(players[e].direction);
-			var yn = x * Math.sin(players[e].direction) + y * Math.cos(players[e].direction);
-			players[e].up = false;
-			if (yn < 0) {
-				players[e].right = true;
-				players[e].left = false;
-			}
-			else if (yn > 0) {
-				players[e].left = true;
-				players[e].right = false;
-			}
-		}
-		if (Math.sqrt(players[e].location[0][0] ** 2 + players[e].location[0][1] ** 2) > mapSize - 30) {
-			var x = 0 - players[e].location[0][0];
-			var y = 0 - players[e].location[0][1];
-			var xn = x * Math.cos(players[e].direction) - y * Math.sin(players[e].direction);
-			var yn = x * Math.sin(players[e].direction) + y * Math.cos(players[e].direction);
-			if (yn > 0) {
-				players[e].right = true;
-				players[e].left = false;
-			}
-			else if (yn < 0) {
-				players[e].left = true;
-				players[e].right = false;
-			}
-		}
+	}
+	if (hypotenuse(players[e].location[0][0], players[e].location[0][1]) > mapSize - 30) {
+		turnTowards(e, [0, 0]);
 	}
 }
 
@@ -474,7 +457,7 @@ function constrict(e) {
 }
 
 function killPlayer(e) {
-	if (Math.sqrt(players[e].location[0][0] ** 2 + players[e].location[0][1] ** 2) > mapSize) {
+	if (hypotenuse(players[e].location[0][0], players[e].location[0][1]) > mapSize) {
 		doKill(e);
 	}
 	for (var i = 0; i < players.length; i++) {
@@ -482,7 +465,7 @@ function killPlayer(e) {
 			for (var c = 0; c < players[i].location.length; c++) {
 				var x = players[e].location[0][0] - players[i].location[c][0];
 				var y = players[e].location[0][1] - players[i].location[c][1];
-				if (Math.sqrt(x ** 2 + y ** 2) < (calcSnakeWidth(e) + calcSnakeWidth(i)) / 2) {
+				if (hypotenuse(x, y) < (calcSnakeWidth(e) + calcSnakeWidth(i)) / 2) {
 					doKill(e);
 				}
 			}
@@ -507,7 +490,12 @@ function eatFood(e) {
 	for (var i = 0; i < food.length; i++) {
 		var x = players[e].location[0][0] - food[i][0];
 		var y = players[e].location[0][1] - food[i][1];
-		if (Math.sqrt(x ** 2 + y ** 2) < calcSnakeWidth(e) / 2 + foodRadius) {
+		var dist = hypotenuse(x, y);
+		if (dist < 15) {
+			food[i][0] += x/2;
+			food[i][1] += y/2;
+		}
+		if (dist < calcSnakeWidth(e) / 2 + foodRadius) {
 			food.splice(i, 1);
 			players[e].size += growthRate;
 		}
@@ -517,7 +505,7 @@ function eatFood(e) {
 		for (var i = 0; i < food.length; i++) {
 			var x = players[e].location[q][0] - food[i][0];
 			var y = players[e].location[q][1] - food[i][1];
-			if (Math.sqrt(x ** 2 + y ** 2) < bodyConsumptionRadius) {
+			if (hypotenuse(x, y) < bodyConsumptionRadius) {
 				food.splice(i, 1);
 				players[e].size += growthRate;
 			}
@@ -530,7 +518,7 @@ function calculate() {
 	spectatorRotate += spectatorRotationVelocity;
 	for (var e = 0; e < players.length; e++) {
 		if (players[e].inGame) {
-			calcAI(e);
+			if (players[e].cpu && food.length > 0) { calcAI(e) }
 			rotatePlayer(e);
 			movePlayer(e);
 			if (players[e].up && players[e].size > playerSizeFloor) {
@@ -623,28 +611,36 @@ function translateCanvas(e) {
 	ctx[e].restore();
 	ctx[e].save();
 	ctx[e].translate(canvas[e].width / 2, canvas[e].height / 2);
-	if (players[e].inGame) {
-		ctx[e].rotate(players[e].direction - Math.PI / 2);
-		ctx[e].scale(playerScale(e), playerScale(e));
-		ctx[e].translate(-players[e].location[0][0], -players[e].location[0][1]);
-		scoreMeters[e].innerHTML = "Score: " + Math.floor(players[e].size);
-	}
-	else if (playersInGame.length !== 0) {
-		ctx[e].rotate(spectatorRotate);
-		ctx[e].translate(-players[indexOfSpectate].location[0][0] * spectateZoom, -players[indexOfSpectate].location[0][1] * spectateZoom);
-	}
-	if (!players[e].inGame) {
-		var keys = players[e].upKey + players[e].leftKey + players[e].downKey + players[e].rightKey;
-		if (keys.length > 4) {
-			keys = "the arrow keys"
+	if (!spectateMode || numOfPlayers != 1) {
+		if (players[e].inGame) {
+			ctx[e].rotate(players[e].direction - Math.PI / 2);
+			ctx[e].scale(playerScale(e), playerScale(e));
+			ctx[e].translate(-players[e].location[0][0], -players[e].location[0][1]);
+			scoreMeters[e].innerHTML = "Score: " + Math.floor(players[e].size);
 		}
-		scoreMeters[e].innerHTML = `Press ${players[e].spawnKey} to join! Use ${keys} to control your snake!`;
-		ctx[e].scale(spectateZoom, spectateZoom);
+		else if (playersInGame.length !== 0) {
+			ctx[e].rotate(spectatorRotate);
+			ctx[e].translate(-players[indexOfSpectate].location[0][0] * spectateZoom, -players[indexOfSpectate].location[0][1] * spectateZoom);
+		}
+		if (!players[e].inGame) {
+			var keys = players[e].upKey + players[e].leftKey + players[e].downKey + players[e].rightKey;
+			if (keys.length > 4) {
+				keys = "the arrow keys"
+			}
+			scoreMeters[e].innerHTML = `Press ${players[e].spawnKey} to join! Use ${keys} to control your snake!`;
+			ctx[e].scale(spectateZoom, spectateZoom);
+		}
 	}
 }
 
 function playerScale(e) {
 	return 10 / calcSnakeWidth(e);
+}
+
+function translateCanvasSpectate(e) {
+	ctx[e].restore();
+	ctx[e].save();
+	ctx[e].translate(canvas[e].width / 2, canvas[e].height / 2);
 }
 
 function draw() {
@@ -658,24 +654,34 @@ function draw() {
 }
 
 function makeGradient(colors, e) {
-	var grd = ctx[e].createRadialGradient(0, 0, 0, 0, 0, mapSize);
+	return (colors[0]);
+/*	var grd = ctx[e].createRadialGradient(0, 0, 0, 0, 0, mapSize);
 	grd.addColorStop(0, colors[0]);
 	grd.addColorStop(1, colors[1]);
-	return grd;
+	return grd;*/
 }
 
 function main() {
-	if (new Date().getSeconds() != seconds) {
-		document.getElementById("framerate").innerHTML = "FPS: " + frames;
-		relativeGamespeed = 60 / frames;
+/*	if (new Date().getSeconds() != seconds && performance.now() > 100) {
+		frameRate = frames;
+		document.getElementById("framerate").innerHTML = "FPS: " + frameRate;
+		relativeGameSpeed = 60 / frames;
 		frames = 0;
 		seconds = new Date().getSeconds();
-	}
+	}*/
+	var now = performance.now();
+	frameRate = 1/((now-seconds)/1000);
+	document.getElementById("framerate").innerHTML = "FPS: " + frameRate;
+	seconds = now;
+	relativeGameSpeed = 60 / frameRate;
+	
 	frames++;
 	if (!paused) {
 		calculate();
 	}
-	draw();
+	if (frameRate > 50 || frames%2==0) {
+		draw();
+	}
 	requestAnimationFrame(main);
 }
 

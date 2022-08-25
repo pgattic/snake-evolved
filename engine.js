@@ -15,14 +15,13 @@ const
 	mapBorderWidth = 10,
 	foodRadius = 5,
 	spectateDuration = 200,
-	compassRadius = 10,
 	spectateZoom = 0.5,
 	bgColor = ["#fff", "#aaa"],
 	mapBorderColor = "#000",
 	foodColor = "#080",
 	pauseKey = "Escape",
 	spectatorRotationVelocity = 0.005,
-	version = "pgattic v1.10.0";
+	version = "pgattic v1.10.2";
 
 var
 	indexOfSpectate = 1,
@@ -43,201 +42,114 @@ var
 	startDirection,
 	startLocation,
 	scoreMeters,
-	players,
-	selectedFood = 0;
+	selectedFood = 0,
+	startDirection = [Math.PI / 2, 0, Math.PI, Math.PI * (3/2)],
+	startLocation = [[0, -200], [200, 0], [-200, 0], [0, 200]],
+	players = [
+		{
+			location: [ startLocation[0] ],
+			direction: startDirection[0],
+			size: startLength,
+			boosting:false,
+			right: false,
+			left: false,
+			up: false,
+			color: ["#f00", "#a00"],
+			boostColor: ["#f66", "#a66"],
+			upKey: "W",
+			leftKey: "A",
+			downKey: "S",
+			rightKey: "D",
+			spawnKey: "1",
+			inGame: false,
+			cpu: spectateMode,
+		},
+		{
+			location: [ startLocation[1] ],
+			direction: startDirection[1],
+			size: startLength,
+			boosting:false,
+			right: false,
+			left: false,
+			up: false,
+			color: ["#0a0", "#060"],
+			boostColor: ["#6a6", "#363"],
+			upKey: "T",
+			leftKey: "F",
+			downKey: "G",
+			rightKey: "H",
+			spawnKey: "2",
+			inGame: false,
+			cpu: spectateMode,
+		},
+		{
+			location: [ startLocation[2] ],
+			direction: startDirection[2],
+			size: startLength,
+			boosting:false,
+			right: false,
+			left: false,
+			up: false,
+			color: ["#00f", "#00a"],
+			boostColor: ["#66f", "#66a"],
+			upKey: "I",
+			leftKey: "J",
+			downKey: "K",
+			rightKey: "L",
+			spawnKey: "3",
+			inGame: false,
+			cpu: spectateMode,
+		},
+		{
+			location: [ startLocation[3] ],
+			direction: startDirection[3],
+			size: startLength,
+			boosting:false,
+			right: false,
+			left: false,
+			up: false,
+			color: ["#a0a", "#606"],
+			boostColor: ["#a6a", "#636"],
+			upKey: "ARROWUP",
+			leftKey: "ARROWLEFT",
+			downKey: "ARROWDOWN",
+			rightKey: "ARROWRIGHT",
+			spawnKey: "4",
+			inGame: false,
+			cpu: spectateMode,
+		},
+	];
 
 switch (numOfPlayers) {
 	case 1:
 		canvas = [document.getElementById("1")];
 		ctx = [canvas[0].getContext("2d")];
-		startDirection = [Math.PI / 2, Math.PI, 0, Math.PI * (3/2)];
-		startLocation = [[0, -200], [-200, 0], [200, 0], [0, 200]];
 		scoreMeters = [document.getElementById("a")];
-		players = [
-			{
-				location: [ startLocation[0] ],
-				direction: startDirection[0],
-				size: startLength,
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#f00", "#a00"],
-				boostColor: ["#f66", "#a66"],
-				upKey: "ARROWUP",
-				leftKey: "ARROWLEFT",
-				downKey: "ARROWDOWN",
-				rightKey: "ARROWRIGHT",
-				spawnKey: "1",
-				inGame: true,
-				cpu: spectateMode,
-			},
-			{
-				location: [ startLocation[1] ],
-				direction: startDirection[1],
-				size: generateAILength(),
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#0a0", "#060"],
-				boostColor: ["#6a6", "#363"],
-				inGame: true,
-				cpu: true,
-			},
-			{
-				location: [ startLocation[2] ],
-				direction: startDirection[2],
-				size: generateAILength(),
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#00f", "#00a"],
-				boostColor: ["#66f", "#66a"],
-				inGame: true,
-				cpu: true,
-			},
-			{
-				location: [ startLocation[3] ],
-				direction: startDirection[3],
-				size: generateAILength(),
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#a0a", "#606"],
-				boostColor: ["#a6a", "#636"],
-				inGame: true,
-				cpu: true,
-			},
-		];
+		players[0].inGame = players[1].inGame = players[2].inGame = players[3].inGame = true;
+		players[1].cpu = players[2].cpu = players[3].cpu = true;
+		players[1].size = generateAILength();
+		players[2].size = generateAILength();
+		players[3].size = generateAILength();
+		players[0].upKey = "ARROWUP";
+		players[0].leftKey = "ARROWLEFT";
+		players[0].downKey = "ARROWDOWN";
+		players[0].rightKey = "ARROWRIGHT";
 		break;
 	case 2:
 		canvas = [document.getElementById("1"), document.getElementById("2")];
 		ctx = [canvas[0].getContext("2d"), canvas[1].getContext("2d")];
-		startDirection = [Math.PI, 0];
-		startLocation = [[-200, 0], [200, 0]];
 		scoreMeters = [document.getElementById("a"), document.getElementById("b"), document.getElementById("c"), document.getElementById("d")];
-		players = [
-			{
-				location: [ startLocation[0] ],
-				direction: startDirection[0],
-				size: startLength,
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#f00", "#a00"],
-				boostColor: ["#f66", "#a66"],
-				upKey: "W",
-				leftKey: "A",
-				downKey: "S",
-				rightKey: "D",
-				spawnKey: "1",
-				inGame: false,
-				cpu: spectateMode,
-			},
-			{
-				location: [ startLocation[1] ],
-				direction: startDirection[1],
-				size: startLength,
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#0a0", "#060"],
-				boostColor: ["#6a6", "#363"],
-				upKey: "ARROWUP",
-				leftKey: "ARROWLEFT",
-				downKey: "ARROWDOWN",
-				rightKey: "ARROWRIGHT",
-				spawnKey: "2",
-				inGame: false,
-				cpu: spectateMode,
-			},
-		];
+		players.pop();
+		players.pop();
+		players[1].upKey = "ARROWUP";
+		players[1].leftKey = "ARROWLEFT";
+		players[1].downKey = "ARROWDOWN";
+		players[1].rightKey = "ARROWRIGHT";
 		break;
 	case 4:
 		canvas = [document.getElementById("1"), document.getElementById("2"), document.getElementById("3"), document.getElementById("4")];
 		ctx = [canvas[0].getContext("2d"), canvas[1].getContext("2d"), canvas[2].getContext("2d"), canvas[3].getContext("2d")];
-		startDirection = [Math.PI / 2, Math.PI, 0, Math.PI * (3/2)];
-		startLocation = [[0, -200], [-200, 0], [200, 0], [0, 200]];
 		scoreMeters = [document.getElementById("a"), document.getElementById("b"), document.getElementById("c"), document.getElementById("d")];
-		players = [
-			{
-				location: [ startLocation[0] ],
-				direction: startDirection[0],
-				size: startLength,
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#f00", "#a00"],
-				boostColor: ["#f66", "#a66"],
-				upKey: "W",
-				leftKey: "A",
-				downKey: "S",
-				rightKey: "D",
-				spawnKey: "1",
-				inGame: false,
-				cpu: spectateMode,
-			},
-			{
-				location: [ startLocation[1] ],
-				direction: startDirection[1],
-				size: startLength,
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#0a0", "#060"],
-				boostColor: ["#6a6", "#363"],
-				upKey: "T",
-				leftKey: "F",
-				downKey: "G",
-				rightKey: "H",
-				spawnKey: "2",
-				inGame: false,
-				cpu: spectateMode,
-			},
-			{
-				location: [ startLocation[2] ],
-				direction: startDirection[2],
-				size: startLength,
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#00f", "#00a"],
-				boostColor: ["#66f", "#66a"],
-				upKey: "I",
-				leftKey: "J",
-				downKey: "K",
-				rightKey: "L",
-				spawnKey: "3",
-				inGame: false,
-				cpu: spectateMode,
-			},
-			{
-				location: [ startLocation[3] ],
-				direction: startDirection[3],
-				size: startLength,
-				boosting:false,
-				right: false,
-				left: false,
-				up: false,
-				color: ["#a0a", "#606"],
-				boostColor: ["#a6a", "#636"],
-				upKey: "ARROWUP",
-				leftKey: "ARROWLEFT",
-				downKey: "ARROWDOWN",
-				rightKey: "ARROWRIGHT",
-				spawnKey: "4",
-				inGame: false,
-				cpu: spectateMode,
-			},
-		];
 		break;
 }
 document.getElementById("version").innerHTML = version;
@@ -288,10 +200,12 @@ onkeydown = () => {
 				players[e].right = true;
 				break;
 			case players[e].spawnKey:
-				if (players[e].inGame) {
-					doKill(e);
+				if (numOfPlayers > 1) {
+					if (players[e].inGame) {
+						doKill(e);
+					}
+					players[e].inGame = !players[e].inGame;
 				}
-				players[e].inGame = !players[e].inGame;
 		}
 	}
 	if (event.key == pauseKey) {
@@ -475,7 +389,7 @@ function killPlayer(e) {
 
 function doKill(e) {
 	for (var i = 0; i < players[e].location.length; i++) {
-		if (i % foodDropConstant == 0 && !(players[e].location[i][0] == players[e].location[players[e].location.length - 1][0] && players[e].location[i][1] == players[e].location[players[e].location.length - 1][1] )) {
+		if (i % foodDropConstant == 0) {
 			food.push([players[e].location[i][0], players[e].location[i][1]])
 		}
 	}
@@ -492,8 +406,8 @@ function eatFood(e) {
 		var y = players[e].location[0][1] - food[i][1];
 		var dist = hypotenuse(x, y);
 		if (dist < 15) {
-			food[i][0] += x/2;
-			food[i][1] += y/2;
+			food[i][0] += x/4;
+			food[i][1] += y/4;
 		}
 		if (dist < calcSnakeWidth(e) / 2 + foodRadius) {
 			food.splice(i, 1);
@@ -501,7 +415,7 @@ function eatFood(e) {
 		}
 	}
 
-	for (var q = 0; q < players[e].location.length; q++) {
+	for (var q = 3; q < players[e].location.length; q++) { // q is 3 because the firt few body segments act as the "head" anyway
 		for (var i = 0; i < food.length; i++) {
 			var x = players[e].location[q][0] - food[i][0];
 			var y = players[e].location[q][1] - food[i][1];
@@ -561,20 +475,11 @@ function drawPlayer(e) {
 			}
 			ctx[e].lineTo(players[v].location[players[v].location.length - 1][0], players[v].location[players[v].location.length - 1][1])
 			ctx[e].stroke();
-			ctx[e].closePath();
 			ctx[e].beginPath();
 			ctx[e].arc(players[v].location[0][0], players[v].location[0][1], calcSnakeWidth(v) / 4, 0, Math.PI * 2);
 			ctx[e].fillStyle = compassColor(v);
 			ctx[e].fill();
-			ctx[e].closePath();
 		}
-	}
-
-	if (players[e].inGame) {
-		ctx[e].font = calcSnakeWidth(e) * 1.5 + "px Arial";
-		ctx[e].fillStyle = compassColor(v);
-		ctx[e].textAlign = "center";
-		ctx[e].fillText("▲", players[e].location[0][0], players[e].location[0][1] - calcSnakeWidth(e) );	
 	}
 }
 
@@ -602,7 +507,6 @@ function drawFood(e) {
 //			ctx[e].rect(i[0] - 4, i[1] - 4, 8, 8);
 			ctx[e].fillStyle = foodColor;
 			ctx[e].fill();
-//			ctx[e].closePath();
 //		}
 	}
 }
@@ -670,8 +574,8 @@ function main() {
 		seconds = new Date().getSeconds();
 	}*/
 	var now = performance.now();
-	frameRate = 1/((now-seconds)/1000);
-	document.getElementById("framerate").innerHTML = "FPS: " + frameRate;
+	frameRate = 1000/(now-seconds);
+	document.getElementById("framerate").innerHTML = "FPS: " + Math.round(frameRate);
 	seconds = now;
 	relativeGameSpeed = 60 / frameRate;
 	
